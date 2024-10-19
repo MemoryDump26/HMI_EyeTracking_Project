@@ -12,7 +12,25 @@ pip install -r requirements.txt
 python demo1.py
 ```
 
+# Chạy trên Windows
+```
+Shift + Right click trong folder -> open Powershell/Command Prompt
+
+# Setup venv (chỉ cần chạy khi mới clone)
+python -m venv ./venv
+
+# Kích hoạt venv khi mở terminal mới (thường thì shell sẽ hiện '(venv)' ở đầu)
+.\venv\bin\Activate.ps1
+
+# Chạy nếu có thêm dependency (sau khi đã mở venv)
+pip install -r requirements.txt
+
+python demo1.py
+```
+
 # Notes
+## `imgui_test.py`
+- demo mới trên imgui
 ## `demo1.py`
 - Là file tạm cài lại, chỉ hiện dữ liệu liên quan tới mắt.
 - Mặc định phân giải 800x600, 20fps, có thể chỉnh ở đầu file ("Camera parameters")
