@@ -24,7 +24,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # Camera parameters
-camera_id = 2
+camera_id = 0
 width = 800
 height = 600
 cap_fps = 20
