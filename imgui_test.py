@@ -65,7 +65,7 @@ visible_blendshapes = [
 DETECTION_RESULT = None
 
 # Detector parameters
-model = "face_landmarker.task"
+model = r"face_landmarker.task"
 num_faces = 1
 min_face_detection_confidence = 0.5
 min_face_presence_confidence = 0.5
