@@ -44,6 +44,15 @@ visible_blendshapes = [
     ["Right Eye Up", 18, 0.0, 1.0],
     ["Left Eye Down", 11, 0.0, 1.0],
     ["Right Eye Down", 12, 0.0, 1.0],
+    ["Left Eye Left", 15, 0.0, 1.0],
+    ["Right Eye Left", 14, 0.0, 1.0],
+    ["Left Eye Right", 13, 0.0, 1.0],
+    ["Right Eye Right", 16, 0.0, 1.0],
+]
+
+gaze_test = [
+    ["Gaze Y Axis", 0.0, 1.0, 1.0],
+    ["Gaze X Axis", 0.0, 1.0, 1.0],
 ]
 
 # EYE_BLINK_LEFT = 9
@@ -239,7 +248,7 @@ def main():
         # imgui.show_test_window()
 
         if show_custom_window:
-            imgui.set_next_window_size(img_width + 100, img_height + 300)
+            imgui.set_next_window_size(img_width + 100, img_height + 400)
             is_expand, show_custom_window = imgui.begin("Custom window", True)
             if is_expand:
                 imgui.image(img_texture, img_width, img_height)
@@ -250,22 +259,63 @@ def main():
                         score = round(score, 2)
 
                         imgui.progress_bar(score, (0, 0), category[0])
-                        imgui.push_id(category[0])
-                        imgui.same_line()
-                        if imgui.button("Trim"):
-                            category[2] = -1 * round(raw_score, 2)
-                        imgui.same_line()
-                        if imgui.button("Scale"):
-                            category[3] = round(
-                                1 / (raw_score + category[2]),
+                        # Disable old trim/scale for now
+                        # imgui.push_id(category[0])
+                        # imgui.same_line()
+                        # if imgui.button("Trim"):
+                        #     category[2] = -1 * round(raw_score, 2)
+                        # imgui.same_line()
+                        # if imgui.button("Scale"):
+                        #     category[3] = round(
+                        #         1 / (raw_score + category[2]),
+                        #         2,
+                        #     )
+                        # imgui.pop_id()
+
+                    # Calculate gaze?
+                    gaze_y_axis_raw_score = (
+                        face_blendshapes[0][17].score
+                        + face_blendshapes[0][18].score
+                        - face_blendshapes[0][11].score
+                        - face_blendshapes[0][12].score
+                    )
+                    # gaze_test[0][1]: offset ("center" the reading)
+                    gaze_y_axis_score = gaze_y_axis_raw_score + gaze_test[0][1]
+                    # gaze_test[0][2]: scale "down" (set where you're looking as 'maximum downward')
+                    # gaze_test[0][3]: scale "up"
+                    if gaze_y_axis_score < 0:
+                        gaze_y_axis_score *= gaze_test[0][2]
+                    else:
+                        gaze_y_axis_score *= gaze_test[0][3]
+
+                    imgui.slider_float(gaze_test[0][0], gaze_y_axis_score, -2, 2)
+
+                    if imgui.button("Trim (look at the center then press)##Y"):
+                        gaze_test[0][1] = -1 * round(gaze_y_axis_raw_score, 2)
+                    imgui.same_line()
+                    if imgui.button("Scale 'Down' (look down then press)##Y"):
+                        gaze_test[0][2] = abs(
+                            round(
+                                2 / (gaze_y_axis_raw_score + gaze_test[0][1]),
                                 2,
                             )
-                        imgui.pop_id()
+                        )
+                    imgui.same_line()
+                    if imgui.button("Scale 'Up' (look up then press)##Y"):
+                        gaze_test[0][3] = abs(
+                            round(
+                                2 / (gaze_y_axis_raw_score + gaze_test[0][1]),
+                                2,
+                            )
+                        )
 
                 if imgui.button("Reset all offset and scale"):
                     for idx, category in enumerate(visible_blendshapes):
                         category[2] = 0.0
                         category[3] = 1.0
+                    for idx, gaze_dir in enumerate(gaze_test):
+                        gaze_dir[2] = 1.0
+                        gaze_dir[3] = 1.0
 
                 imgui.text(
                     "Look at the center of the screen, and press 'Trim' to make 0.0 'the center'"
