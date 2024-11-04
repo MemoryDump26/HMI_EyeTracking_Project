@@ -157,6 +157,10 @@ def main():
     imgui.create_context()
     impl = SDL2Renderer(window)
 
+    io = imgui.get_io()
+    custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
+    impl.refresh_font_texture()
+
     show_custom_window = True
 
     running = True
@@ -177,6 +181,7 @@ def main():
         # cv2.imshow("Demo1", current_frame)
 
         imgui.new_frame()
+        imgui.push_font(custom_font)
 
         success, current_frame = cap.read()
         if not success:
@@ -250,7 +255,7 @@ def main():
         # imgui.show_test_window()
 
         if show_custom_window:
-            imgui.set_next_window_size(img_width + 100, img_height + 400)
+            imgui.set_next_window_size(img_width + 100, img_height + 500)
             is_expand, show_custom_window = imgui.begin("Custom window", True)
             if is_expand:
                 imgui.image(img_texture, img_width, img_height)
@@ -330,6 +335,7 @@ def main():
         gl.glClearColor(1.0, 1.0, 1.0, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
+        imgui.pop_font()
         imgui.render()
         impl.render(imgui.get_draw_data())
         SDL_GL_SwapWindow(window)
