@@ -18,6 +18,7 @@ from mediapipe.tasks.python import vision
 from sdl2 import *
 
 from testwindow import show_test_window
+from vkeyboard import show_keyboard
 
 mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
@@ -245,6 +246,7 @@ def main():
             imgui.end_main_menu_bar()
 
         show_test_window()
+        show_keyboard()
         # imgui.show_test_window()
 
         if show_custom_window:
