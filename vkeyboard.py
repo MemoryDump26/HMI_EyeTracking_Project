@@ -20,14 +20,20 @@ class VKeyboard:
         self.layout = [
             ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
             ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-            ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";"],
+            ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "Enter"],
             ["z", "x", "c", "v", "b", "n", "m", ",", ".", "/"],
-            [" "],
+            [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
         ]
 
+    def press_current_key(self):
+        self.press_key(self.sel_row, self.sel_col)
+
     def press_key(self, row: int, col: int):
-        imgui.set_keyboard_focus_here(-1)
-        self.kb.tap(self.layout[row][col])
+        if self.layout[row][col] == "Enter":
+            # lmao
+            self.kb.tap(Key.enter)
+        else:
+            self.kb.tap(self.layout[row][col])
 
     def nav_left(self):
         if self.sel_col > 0:
@@ -40,10 +46,16 @@ class VKeyboard:
     def nav_up(self):
         if self.sel_row > 0:
             self.sel_row -= 1
+        current_row_length = len(self.layout[self.sel_row]) - 1
+        if self.sel_col > current_row_length:
+            self.sel_col = current_row_length
 
     def nav_down(self):
         if self.sel_row < len(self.layout) - 1:
             self.sel_row += 1
+        current_row_length = len(self.layout[self.sel_row]) - 1
+        if self.sel_col > current_row_length:
+            self.sel_col = current_row_length
 
     def show_keyboard(self):
         imgui.begin("vkeyboard")
@@ -56,6 +68,7 @@ class VKeyboard:
                     selected = True
                     imgui.push_style_color(imgui.COLOR_BUTTON, 0.5, 0.3, 0.3)
                 if imgui.button(col):
+                    imgui.set_keyboard_focus_here(-1)
                     self.press_key(r_idx, c_idx)
                 if selected:
                     imgui.pop_style_color(1)
@@ -70,5 +83,6 @@ class VKeyboard:
         if imgui.button("Down"):
             self.nav_down()
         if imgui.button("Press current key"):
-            self.press_key(self.sel_row, self.sel_col)
+            # self.press_key(self.sel_row, self.sel_col)
+            self.press_current_key()
         imgui.end()

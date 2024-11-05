@@ -7,6 +7,8 @@ import time
 # https://github.com/pygame/pygame/issues/3110#issuecomment-2089118912
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
+from threading import Timer
+
 import cv2
 import imgui
 import mediapipe as mp
@@ -25,7 +27,7 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
 # Camera parameters
-camera_id = 0
+camera_id = 2
 width = 800
 height = 600
 cap_fps = 20
@@ -41,6 +43,10 @@ flip = False
 # Visible blendshapes
 # [Custom name, ID (see below), offset, scale]
 visible_blendshapes = [
+    ["Left Brow Up", 4, 0.0, 1.0],
+    ["Right Brow Up", 5, 0.0, 1.0],
+    ["Left Eye Blink", 9, 0.0, 1.0],
+    ["Right Eye Blink", 10, 0.0, 1.0],
     ["Left Eye Up", 17, 0.0, 1.0],
     ["Right Eye Up", 18, 0.0, 1.0],
     ["Left Eye Down", 11, 0.0, 1.0],
@@ -56,6 +62,11 @@ gaze_test = [
     ["Gaze Y Axis", 0.0, 1.0, 1.0],
 ]
 
+# BROW_DOWN_LEFT = 1
+# BROW_DOWN_RIGHT = 2
+# BROW_INNER_UP = 3
+# BROW_OUTER_UP_LEFT = 4
+# BROW_OUTER_UP_RIGHT = 5
 # EYE_BLINK_LEFT = 9
 # EYE_BLINK_RIGHT = 10
 # EYE_LOOK_DOWN_LEFT = 11
@@ -159,6 +170,7 @@ def main():
 
     io = imgui.get_io()
     custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
+    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 72)
     impl.refresh_font_texture()
 
     show_custom_window = True
@@ -171,6 +183,9 @@ def main():
     print("GPU :", gl.glGetString(gl.GL_RENDERER))
 
     vkb = VKeyboard()
+    vkb_move_timer = None
+    vkb_commit_timer = None
+    input_enabled = False
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
@@ -253,13 +268,15 @@ def main():
             imgui.end_main_menu_bar()
 
         show_test_window()
+        imgui.push_font(keyboard_font)
         vkb.show_keyboard()
+        imgui.pop_font()
 
         if show_custom_window:
-            imgui.set_next_window_size(img_width + 100, img_height + 500)
+            # imgui.set_next_window_size(img_width + 100, img_height + 500)
             is_expand, show_custom_window = imgui.begin("Custom window", True)
             if is_expand:
-                imgui.image(img_texture, img_width, img_height)
+                imgui.image(img_texture, img_width / 2, img_height / 2)
                 if face_blendshapes:
                     for idx, category in enumerate(visible_blendshapes):
                         raw_score = face_blendshapes[0][category[1]].score
@@ -294,9 +311,72 @@ def main():
                     )
                     gaze_y_axis_score = round(gaze_y_axis_score, 2)
 
+                    brow_left_up_score = face_blendshapes[0][4].score
+                    brow_right_up_score = face_blendshapes[0][5].score
                     # gaze_test[0][1]: offset ("center" the reading)
                     # gaze_test[0][2]: scale "down" (set where you're looking as 'maximum downward')
                     # gaze_test[0][3]: scale "up"
+
+                    # Really, really ugly code here
+                    def go_up():
+                        nonlocal vkb, vkb_move_timer
+                        vkb.nav_up()
+                        vkb_move_timer = None
+
+                    def go_down():
+                        nonlocal vkb, vkb_move_timer
+                        vkb.nav_down()
+                        vkb_move_timer = None
+
+                    def go_left():
+                        nonlocal vkb, vkb_move_timer
+                        vkb.nav_left()
+                        vkb_move_timer = None
+
+                    def go_right():
+                        nonlocal vkb, vkb_move_timer
+                        vkb.nav_right()
+                        vkb_move_timer = None
+
+                    def press_current_key():
+                        nonlocal vkb, vkb_commit_timer
+                        vkb.press_current_key()
+                        vkb_commit_timer = None
+
+                    hold_time = 1
+                    commit_time = 1
+
+                    # Even more ugly code lol
+                    if input_enabled:
+                        if vkb_move_timer is None:
+                            if gaze_y_axis_score > 1.5:
+                                vkb_move_timer = Timer(hold_time, go_up)
+                                vkb_move_timer.start()
+                            elif gaze_y_axis_score < -1.5:
+                                vkb_move_timer = Timer(hold_time, go_down)
+                                vkb_move_timer.start()
+                            elif gaze_x_axis_score > 1.5:
+                                vkb_move_timer = Timer(hold_time, go_right)
+                                vkb_move_timer.start()
+                            elif gaze_x_axis_score < -1.5:
+                                vkb_move_timer = Timer(hold_time, go_left)
+                                vkb_move_timer.start()
+                        else:
+                            if (
+                                abs(gaze_y_axis_score) < 1.5
+                                and abs(gaze_x_axis_score) < 1.5
+                            ):
+                                vkb_move_timer.cancel()
+                                vkb_move_timer = None
+
+                        if vkb_commit_timer is None:
+                            if brow_left_up_score > 0.4 or brow_right_up_score > 0.4:
+                                vkb_commit_timer = Timer(commit_time, press_current_key)
+                                vkb_commit_timer.start()
+                        else:
+                            if brow_left_up_score < 0.4 and brow_right_up_score < 0.4:
+                                vkb_commit_timer.cancel()
+                                vkb_commit_timer = None
 
                     def trim(raw_score: float):
                         return -1 * round(raw_score, 2)
@@ -324,6 +404,8 @@ def main():
                     if imgui.button("Max##Y"):
                         gaze_test[1][3] = scale(gaze_y_axis_raw_score, gaze_test[1][1])
 
+                _, input_enabled = imgui.checkbox("Input enabled", input_enabled)
+
                 if imgui.button("Reset all offset and scale"):
                     for idx, category in enumerate(visible_blendshapes):
                         category[2] = 0.0
@@ -333,12 +415,12 @@ def main():
                         gaze_dir[2] = 1.0
                         gaze_dir[3] = 1.0
 
-                imgui.text(
-                    "Look at the center of the screen, and press 'Trim' to make 0.0 'the center'"
-                )
-                imgui.text(
-                    "Look at the edge of then, and press 'Scale' to make 1.0 'the edge'"
-                )
+                # imgui.text(
+                #     "Look at the center of the screen, and press 'Trim' to make 0.0 'the center'"
+                # )
+                # imgui.text(
+                #     "Look at the edge of then, and press 'Scale' to make 1.0 'the edge'"
+                # )
             imgui.end()
 
         gl.glClearColor(1.0, 1.0, 1.0, 1)
@@ -348,6 +430,8 @@ def main():
         imgui.render()
         impl.render(imgui.get_draw_data())
         SDL_GL_SwapWindow(window)
+        # killed my memory lol
+        img_texture = None
 
     cap.release()
     cv2.destroyAllWindows()
