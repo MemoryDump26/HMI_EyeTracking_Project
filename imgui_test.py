@@ -52,8 +52,8 @@ visible_blendshapes = [
 ]
 
 gaze_test = [
-    ["Gaze Y Axis", 0.0, 1.0, 1.0],
     ["Gaze X Axis", 0.0, 1.0, 1.0],
+    ["Gaze Y Axis", 0.0, 1.0, 1.0],
 ]
 
 # EYE_BLINK_LEFT = 9
@@ -265,63 +265,71 @@ def main():
                         raw_score = face_blendshapes[0][category[1]].score
                         score = (raw_score + category[2]) * category[3]
                         score = round(score, 2)
-
                         imgui.progress_bar(score, (0, 0), category[0])
-                        # Disable old trim/scale for now
-                        # imgui.push_id(category[0])
-                        # imgui.same_line()
-                        # if imgui.button("Trim"):
-                        #     category[2] = -1 * round(raw_score, 2)
-                        # imgui.same_line()
-                        # if imgui.button("Scale"):
-                        #     category[3] = round(
-                        #         1 / (raw_score + category[2]),
-                        #         2,
-                        #     )
-                        # imgui.pop_id()
 
                     # Calculate gaze?
+                    gaze_x_axis_raw_score = (
+                        face_blendshapes[0][13].score
+                        + face_blendshapes[0][16].score
+                        - face_blendshapes[0][14].score
+                        - face_blendshapes[0][15].score
+                    )
+
+                    gaze_x_axis_score = gaze_x_axis_raw_score + gaze_test[0][1]
+                    gaze_x_axis_score *= (
+                        gaze_test[0][2] if (gaze_x_axis_score < 0) else gaze_test[0][3]
+                    )
+                    gaze_x_axis_score = round(gaze_x_axis_score, 2)
+
                     gaze_y_axis_raw_score = (
                         face_blendshapes[0][17].score
                         + face_blendshapes[0][18].score
                         - face_blendshapes[0][11].score
                         - face_blendshapes[0][12].score
                     )
+
+                    gaze_y_axis_score = gaze_y_axis_raw_score + gaze_test[1][1]
+                    gaze_y_axis_score *= (
+                        gaze_test[1][2] if (gaze_y_axis_score < 0) else gaze_test[1][3]
+                    )
+                    gaze_y_axis_score = round(gaze_y_axis_score, 2)
+
                     # gaze_test[0][1]: offset ("center" the reading)
-                    gaze_y_axis_score = gaze_y_axis_raw_score + gaze_test[0][1]
                     # gaze_test[0][2]: scale "down" (set where you're looking as 'maximum downward')
                     # gaze_test[0][3]: scale "up"
-                    if gaze_y_axis_score < 0:
-                        gaze_y_axis_score *= gaze_test[0][2]
-                    else:
-                        gaze_y_axis_score *= gaze_test[0][3]
 
-                    imgui.slider_float(gaze_test[0][0], gaze_y_axis_score, -2, 2)
+                    def trim(raw_score: float):
+                        return -1 * round(raw_score, 2)
 
-                    if imgui.button("Trim (look at the center then press)##Y"):
-                        gaze_test[0][1] = -1 * round(gaze_y_axis_raw_score, 2)
+                    def scale(raw_score: float, offset: float):
+                        return abs(round(2 / (raw_score + offset), 2))
+
+                    imgui.slider_float(gaze_test[0][0], gaze_x_axis_score, -2, 2)
+                    if imgui.button("Center##X"):
+                        gaze_test[0][1] = trim(gaze_x_axis_raw_score)
                     imgui.same_line()
-                    if imgui.button("Scale 'Down' (look down then press)##Y"):
-                        gaze_test[0][2] = abs(
-                            round(
-                                2 / (gaze_y_axis_raw_score + gaze_test[0][1]),
-                                2,
-                            )
-                        )
+                    if imgui.button("Min##X"):
+                        gaze_test[0][2] = scale(gaze_x_axis_raw_score, gaze_test[0][1])
                     imgui.same_line()
-                    if imgui.button("Scale 'Up' (look up then press)##Y"):
-                        gaze_test[0][3] = abs(
-                            round(
-                                2 / (gaze_y_axis_raw_score + gaze_test[0][1]),
-                                2,
-                            )
-                        )
+                    if imgui.button("Max##X"):
+                        gaze_test[0][3] = scale(gaze_x_axis_raw_score, gaze_test[0][1])
+
+                    imgui.slider_float(gaze_test[1][0], gaze_y_axis_score, -2, 2)
+                    if imgui.button("Center##Y"):
+                        gaze_test[1][1] = trim(gaze_y_axis_raw_score)
+                    imgui.same_line()
+                    if imgui.button("Min##Y"):
+                        gaze_test[1][2] = scale(gaze_y_axis_raw_score, gaze_test[1][1])
+                    imgui.same_line()
+                    if imgui.button("Max##Y"):
+                        gaze_test[1][3] = scale(gaze_y_axis_raw_score, gaze_test[1][1])
 
                 if imgui.button("Reset all offset and scale"):
                     for idx, category in enumerate(visible_blendshapes):
                         category[2] = 0.0
                         category[3] = 1.0
                     for idx, gaze_dir in enumerate(gaze_test):
+                        gaze_dir[1] = 0.0
                         gaze_dir[2] = 1.0
                         gaze_dir[3] = 1.0
 
