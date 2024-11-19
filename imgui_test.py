@@ -20,6 +20,7 @@ from mediapipe.tasks.python import vision
 from sdl2 import *
 
 from testwindow import show_test_window
+from tracking import Tracking
 from vkeyboard import VKeyboard
 
 mp_face_mesh = mp.solutions.face_mesh
@@ -182,6 +183,7 @@ def main():
     print("Vendor :", gl.glGetString(gl.GL_VENDOR))
     print("GPU :", gl.glGetString(gl.GL_RENDERER))
 
+    tracking = Tracking()
     vkb = VKeyboard()
     vkb_move_timer = None
     vkb_commit_timer = None
@@ -198,57 +200,59 @@ def main():
         imgui.new_frame()
         imgui.push_font(custom_font)
 
-        success, current_frame = cap.read()
-        if not success:
-            sys.exit(
-                "ERROR: Unable to read from webcam. Please verify your webcam settings."
-            )
+        # success, current_frame = cap.read()
+        # if not success:
+        #     sys.exit(
+        #         "ERROR: Unable to read from webcam. Please verify your webcam settings."
+        #     )
+        #
+        # if flip:
+        #     current_frame = cv2.flip(current_frame, 1)
+        #
+        # # Convert the image from BGR to RGB as required by the TFLite model.
+        # rgb_image = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
+        # mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
+        #
+        # # Run face landmarker using the model.
+        # detector.detect_async(mp_image, time.time_ns() // 1_000_000)
 
-        if flip:
-            current_frame = cv2.flip(current_frame, 1)
+        current_frame, face_blendshapes = tracking.update()
 
-        # Convert the image from BGR to RGB as required by the TFLite model.
-        rgb_image = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-
-        # Run face landmarker using the model.
-        detector.detect_async(mp_image, time.time_ns() // 1_000_000)
-
-        face_blendshapes = None
-        if DETECTION_RESULT:
-            # Draw landmarks.
-            for face_landmarks in DETECTION_RESULT.face_landmarks:
-                face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-                face_landmarks_proto.landmark.extend(
-                    [
-                        landmark_pb2.NormalizedLandmark(
-                            x=landmark.x, y=landmark.y, z=landmark.z
-                        )
-                        for landmark in face_landmarks
-                    ]
-                )
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=face_landmarks_proto,
-                    connections=mp_face_mesh.FACEMESH_TESSELATION,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_tesselation_style(),
-                )
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=face_landmarks_proto,
-                    connections=mp_face_mesh.FACEMESH_CONTOURS,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_contours_style(),
-                )
-                mp_drawing.draw_landmarks(
-                    image=current_frame,
-                    landmark_list=face_landmarks_proto,
-                    connections=mp_face_mesh.FACEMESH_IRISES,
-                    landmark_drawing_spec=None,
-                    connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
-                )
-            face_blendshapes = DETECTION_RESULT.face_blendshapes
+        # face_blendshapes = None
+        # if detection_result:
+        #     # Draw landmarks.
+        #     for face_landmarks in detection_result.face_landmarks:
+        #         face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
+        #         face_landmarks_proto.landmark.extend(
+        #             [
+        #                 landmark_pb2.NormalizedLandmark(
+        #                     x=landmark.x, y=landmark.y, z=landmark.z
+        #                 )
+        #                 for landmark in face_landmarks
+        #             ]
+        #         )
+        #         mp_drawing.draw_landmarks(
+        #             image=current_frame,
+        #             landmark_list=face_landmarks_proto,
+        #             connections=mp_face_mesh.FACEMESH_TESSELATION,
+        #             landmark_drawing_spec=None,
+        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_tesselation_style(),
+        #         )
+        #         mp_drawing.draw_landmarks(
+        #             image=current_frame,
+        #             landmark_list=face_landmarks_proto,
+        #             connections=mp_face_mesh.FACEMESH_CONTOURS,
+        #             landmark_drawing_spec=None,
+        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_contours_style(),
+        #         )
+        #         mp_drawing.draw_landmarks(
+        #             image=current_frame,
+        #             landmark_list=face_landmarks_proto,
+        #             connections=mp_face_mesh.FACEMESH_IRISES,
+        #             landmark_drawing_spec=None,
+        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
+        #         )
+        #     face_blendshapes = detection_result.face_blendshapes
 
         img_texture, img_width, img_height = image_to_texture(current_frame)
 
