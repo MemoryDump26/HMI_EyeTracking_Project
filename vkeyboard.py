@@ -66,7 +66,7 @@ class VKeyboard:
                 selected = False
                 if r_idx == self.sel_row and c_idx == self.sel_col:
                     selected = True
-                    imgui.push_style_color(imgui.COLOR_BUTTON, 0.5, 0.3, 0.3)
+                    imgui.push_style_color(imgui.COLOR_BUTTON, 0.6, 0.8, 1.0)
                 if imgui.button(col):
                     imgui.set_keyboard_focus_here(-1)
                     self.press_key(r_idx, c_idx)
@@ -74,15 +74,19 @@ class VKeyboard:
                     imgui.pop_style_color(1)
                 imgui.same_line()
             imgui.new_line()
-        if imgui.button("Left"):
+        if imgui.button("L"):
             self.nav_left()
-        if imgui.button("Right"):
+        imgui.same_line()
+        if imgui.button("R"):
             self.nav_right()
-        if imgui.button("Up"):
+        imgui.same_line()
+        if imgui.button("U"):
             self.nav_up()
-        if imgui.button("Down"):
+        imgui.same_line()
+        if imgui.button("D"):
             self.nav_down()
-        if imgui.button("Press current key"):
+        imgui.same_line()
+        if imgui.button("Press"):
             # self.press_key(self.sel_row, self.sel_col)
             self.press_current_key()
         imgui.end()

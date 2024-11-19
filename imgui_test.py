@@ -170,7 +170,7 @@ def main():
 
     io = imgui.get_io()
     custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
-    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 72)
+    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 128)
     impl.refresh_font_texture()
 
     show_custom_window = True
@@ -194,8 +194,6 @@ def main():
                 break
             impl.process_event(event)
         impl.process_inputs()
-
-        # cv2.imshow("Demo1", current_frame)
 
         imgui.new_frame()
         imgui.push_font(custom_font)
