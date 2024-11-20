@@ -104,3 +104,6 @@ class Tracking:
             face_blendshapes = self.result.face_blendshapes
 
         return current_frame, face_blendshapes
+
+    def __del__(self):
+        self._cap.release()

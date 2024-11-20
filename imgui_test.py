@@ -23,17 +23,6 @@ from testwindow import show_test_window
 from tracking import Tracking
 from vkeyboard import VKeyboard
 
-mp_face_mesh = mp.solutions.face_mesh
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-
-# Camera parameters
-camera_id = 2
-width = 800
-height = 600
-cap_fps = 20
-flip = False
-
 # Naming scheme, eg: eyeLookInLeft = Left eye, look inward (to the right)
 # Your webcam might mirror the image by default, see 'flip = False' above
 # The mirrored image looks more 'natural', like a mirror
@@ -83,56 +72,6 @@ gaze_test = [
 # EYE_WIDE_LEFT = 21
 # EYE_WIDE_RIGHT = 22
 
-# Global variables
-DETECTION_RESULT = None
-
-# Detector parameters
-model = r"face_landmarker.task"
-num_faces = 1
-min_face_detection_confidence = 0.5
-min_face_presence_confidence = 0.5
-min_tracking_confidence = 0.5
-
-
-# Detector callback
-def save_result(
-    result: vision.FaceLandmarkerResult,
-    unused_output_image: mp.Image,
-    timestamp_ms: int,
-):
-    # global FPS, COUNTER, START_TIME, DETECTION_RESULT
-    global DETECTION_RESULT
-    #
-    # Calculate the FPS
-    # if COUNTER % fps_avg_frame_count == 0:
-    #     FPS = fps_avg_frame_count / (time.time() - START_TIME)
-    # START_TIME = time.time()
-    #
-    DETECTION_RESULT = result
-    # COUNTER += 1
-
-
-# Initialize the face landmarker model
-base_options = python.BaseOptions(model_asset_path=model)
-options = vision.FaceLandmarkerOptions(
-    base_options=base_options,
-    running_mode=vision.RunningMode.LIVE_STREAM,
-    num_faces=num_faces,
-    min_face_detection_confidence=min_face_detection_confidence,
-    min_face_presence_confidence=min_face_presence_confidence,
-    min_tracking_confidence=min_tracking_confidence,
-    output_face_blendshapes=True,
-    result_callback=save_result,
-)
-detector = vision.FaceLandmarker.create_from_options(options)
-
-
-# Webcam setup
-cap = cv2.VideoCapture(camera_id)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-cap.set(cv2.CAP_PROP_FPS, cap_fps)
-
 
 def image_to_texture(IMG):
     img_gl = cv2.cvtColor(IMG, cv2.COLOR_BGR2RGB)  # convert color
@@ -174,17 +113,15 @@ def main():
     keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 128)
     impl.refresh_font_texture()
 
-    show_custom_window = True
-
-    running = True
-    event = SDL_Event()
-
     print("OpenGL version :", gl.glGetString(gl.GL_VERSION))
     print("Vendor :", gl.glGetString(gl.GL_VENDOR))
     print("GPU :", gl.glGetString(gl.GL_RENDERER))
 
+    event = SDL_Event()
     tracking = Tracking()
     vkb = VKeyboard()
+    show_custom_window = True
+    running = True
     vkb_move_timer = None
     vkb_commit_timer = None
     input_enabled = False
@@ -200,60 +137,7 @@ def main():
         imgui.new_frame()
         imgui.push_font(custom_font)
 
-        # success, current_frame = cap.read()
-        # if not success:
-        #     sys.exit(
-        #         "ERROR: Unable to read from webcam. Please verify your webcam settings."
-        #     )
-        #
-        # if flip:
-        #     current_frame = cv2.flip(current_frame, 1)
-        #
-        # # Convert the image from BGR to RGB as required by the TFLite model.
-        # rgb_image = cv2.cvtColor(current_frame, cv2.COLOR_BGR2RGB)
-        # mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        #
-        # # Run face landmarker using the model.
-        # detector.detect_async(mp_image, time.time_ns() // 1_000_000)
-
         current_frame, face_blendshapes = tracking.update()
-
-        # face_blendshapes = None
-        # if detection_result:
-        #     # Draw landmarks.
-        #     for face_landmarks in detection_result.face_landmarks:
-        #         face_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-        #         face_landmarks_proto.landmark.extend(
-        #             [
-        #                 landmark_pb2.NormalizedLandmark(
-        #                     x=landmark.x, y=landmark.y, z=landmark.z
-        #                 )
-        #                 for landmark in face_landmarks
-        #             ]
-        #         )
-        #         mp_drawing.draw_landmarks(
-        #             image=current_frame,
-        #             landmark_list=face_landmarks_proto,
-        #             connections=mp_face_mesh.FACEMESH_TESSELATION,
-        #             landmark_drawing_spec=None,
-        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_tesselation_style(),
-        #         )
-        #         mp_drawing.draw_landmarks(
-        #             image=current_frame,
-        #             landmark_list=face_landmarks_proto,
-        #             connections=mp_face_mesh.FACEMESH_CONTOURS,
-        #             landmark_drawing_spec=None,
-        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_contours_style(),
-        #         )
-        #         mp_drawing.draw_landmarks(
-        #             image=current_frame,
-        #             landmark_list=face_landmarks_proto,
-        #             connections=mp_face_mesh.FACEMESH_IRISES,
-        #             landmark_drawing_spec=None,
-        #             connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
-        #         )
-        #     face_blendshapes = detection_result.face_blendshapes
-
         img_texture, img_width, img_height = image_to_texture(current_frame)
 
         if imgui.begin_main_menu_bar():
@@ -416,13 +300,6 @@ def main():
                         gaze_dir[1] = 0.0
                         gaze_dir[2] = 1.0
                         gaze_dir[3] = 1.0
-
-                # imgui.text(
-                #     "Look at the center of the screen, and press 'Trim' to make 0.0 'the center'"
-                # )
-                # imgui.text(
-                #     "Look at the edge of then, and press 'Scale' to make 1.0 'the edge'"
-                # )
             imgui.end()
 
         gl.glClearColor(1.0, 1.0, 1.0, 1)
@@ -435,7 +312,7 @@ def main():
         # killed my memory lol
         img_texture = None
 
-    cap.release()
+    # cap.release()
     cv2.destroyAllWindows()
 
     impl.shutdown()
