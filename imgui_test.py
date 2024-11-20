@@ -18,6 +18,7 @@ from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from sdl2 import *
+from statemachine import State, StateMachine
 
 from testwindow import show_test_window
 from tracking import Tracking
@@ -160,27 +161,20 @@ def main():
                         imgui.progress_bar(score, (0, 0), category[0])
 
                     if imgui.button("up_snap"):
-                        up_blendshapes_snap = face_blendshapes[0]
+                        tracking.take_blendshape_snapshot("up")
 
                     if imgui.button("center_snap"):
-                        center_blendshapes_snap = face_blendshapes[0]
+                        tracking.take_blendshape_snapshot("center")
 
-                    up_delta = 0
-                    center_delta = 0
-
-                    if up_blendshapes_snap:
-                        for idx, blendshape in enumerate(face_blendshapes[0]):
-                            up_delta += abs(
-                                blendshape.score - up_blendshapes_snap[idx].score
-                            )
-                    if center_blendshapes_snap:
-                        for idx, blendshape in enumerate(face_blendshapes[0]):
-                            center_delta += abs(
-                                blendshape.score - center_blendshapes_snap[idx].score
-                            )
-
-                    imgui.slider_float("Up Delta", up_delta, -10, 10)
-                    imgui.slider_float("Center Delta", center_delta, -10, 10)
+                    imgui.slider_float(
+                        "Up Delta", tracking.get_blendshape_delta("up"), -10, 10
+                    )
+                    imgui.slider_float(
+                        "Center Delta",
+                        tracking.get_blendshape_delta("center"),
+                        -10,
+                        10,
+                    )
 
             imgui.end()
 

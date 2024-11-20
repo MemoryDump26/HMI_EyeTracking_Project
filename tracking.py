@@ -10,8 +10,6 @@ from mediapipe.tasks.python import vision
 
 class Tracking:
     def __init__(self):
-        self.result = None
-
         # Detector parameters
         model = r"face_landmarker.task"
         num_faces = 1
@@ -50,6 +48,19 @@ class Tracking:
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
         self._cap.set(cv2.CAP_PROP_FPS, cap_fps)
+
+        self.result = None
+        self.blendshape_snapshots = {}  # center, left, right, up, down
+
+    def take_blendshape_snapshot(self, dir: str):
+        if self.result:
+            self.blendshape_snapshots[dir] = [self.result.face_blendshapes[0], 0]
+
+    def get_blendshape_delta(self, dir: str):
+        if dir in self.blendshape_snapshots:
+            return self.blendshape_snapshots[dir][1]
+        else:
+            return 0
 
     def update(self):
         success, current_frame = self._cap.read()
@@ -102,6 +113,11 @@ class Tracking:
                     connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
                 )
             face_blendshapes = self.result.face_blendshapes
+            for snapshot in list(self.blendshape_snapshots.values()):
+                delta = 0
+                for idx, blendshape in enumerate(face_blendshapes[0]):
+                    delta += abs(blendshape.score - snapshot[0][idx].score)
+                snapshot[1] = delta
 
         return current_frame, face_blendshapes
 
