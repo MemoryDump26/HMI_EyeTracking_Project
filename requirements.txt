@@ -1,3 +1,4 @@
 mediapipe
 imgui[sdl2]
 pynput
+python-statemachine
