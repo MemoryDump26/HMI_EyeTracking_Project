@@ -125,6 +125,8 @@ def main():
     vkb_move_timer = None
     vkb_commit_timer = None
     input_enabled = False
+    up_blendshapes_snap = None
+    center_blendshapes_snap = None
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
@@ -139,19 +141,6 @@ def main():
 
         current_frame, face_blendshapes = tracking.update()
         img_texture, img_width, img_height = image_to_texture(current_frame)
-
-        if imgui.begin_main_menu_bar():
-            if imgui.begin_menu("File", True):
-
-                clicked_quit, selected_quit = imgui.menu_item(
-                    "Quit", "Cmd+Q", False, True
-                )
-
-                if clicked_quit:
-                    sys.exit(0)
-
-                imgui.end_menu()
-            imgui.end_main_menu_bar()
 
         show_test_window()
         imgui.push_font(keyboard_font)
@@ -170,136 +159,29 @@ def main():
                         score = round(score, 2)
                         imgui.progress_bar(score, (0, 0), category[0])
 
-                    # Calculate gaze?
-                    gaze_x_axis_raw_score = (
-                        face_blendshapes[0][13].score
-                        + face_blendshapes[0][16].score
-                        - face_blendshapes[0][14].score
-                        - face_blendshapes[0][15].score
-                    )
+                    if imgui.button("up_snap"):
+                        up_blendshapes_snap = face_blendshapes[0]
 
-                    gaze_x_axis_score = gaze_x_axis_raw_score + gaze_test[0][1]
-                    gaze_x_axis_score *= (
-                        gaze_test[0][2] if (gaze_x_axis_score < 0) else gaze_test[0][3]
-                    )
-                    gaze_x_axis_score = round(gaze_x_axis_score, 2)
+                    if imgui.button("center_snap"):
+                        center_blendshapes_snap = face_blendshapes[0]
 
-                    gaze_y_axis_raw_score = (
-                        face_blendshapes[0][17].score
-                        + face_blendshapes[0][18].score
-                        - face_blendshapes[0][11].score
-                        - face_blendshapes[0][12].score
-                    )
+                    up_delta = 0
+                    center_delta = 0
 
-                    gaze_y_axis_score = gaze_y_axis_raw_score + gaze_test[1][1]
-                    gaze_y_axis_score *= (
-                        gaze_test[1][2] if (gaze_y_axis_score < 0) else gaze_test[1][3]
-                    )
-                    gaze_y_axis_score = round(gaze_y_axis_score, 2)
+                    if up_blendshapes_snap:
+                        for idx, blendshape in enumerate(face_blendshapes[0]):
+                            up_delta += abs(
+                                blendshape.score - up_blendshapes_snap[idx].score
+                            )
+                    if center_blendshapes_snap:
+                        for idx, blendshape in enumerate(face_blendshapes[0]):
+                            center_delta += abs(
+                                blendshape.score - center_blendshapes_snap[idx].score
+                            )
 
-                    brow_left_up_score = face_blendshapes[0][4].score
-                    brow_right_up_score = face_blendshapes[0][5].score
-                    # gaze_test[0][1]: offset ("center" the reading)
-                    # gaze_test[0][2]: scale "down" (set where you're looking as 'maximum downward')
-                    # gaze_test[0][3]: scale "up"
+                    imgui.slider_float("Up Delta", up_delta, -10, 10)
+                    imgui.slider_float("Center Delta", center_delta, -10, 10)
 
-                    # Really, really ugly code here
-                    def go_up():
-                        nonlocal vkb, vkb_move_timer
-                        vkb.nav_up()
-                        vkb_move_timer = None
-
-                    def go_down():
-                        nonlocal vkb, vkb_move_timer
-                        vkb.nav_down()
-                        vkb_move_timer = None
-
-                    def go_left():
-                        nonlocal vkb, vkb_move_timer
-                        vkb.nav_left()
-                        vkb_move_timer = None
-
-                    def go_right():
-                        nonlocal vkb, vkb_move_timer
-                        vkb.nav_right()
-                        vkb_move_timer = None
-
-                    def press_current_key():
-                        nonlocal vkb, vkb_commit_timer
-                        vkb.press_current_key()
-                        vkb_commit_timer = None
-
-                    hold_time = 1
-                    commit_time = 1
-
-                    # Even more ugly code lol
-                    if input_enabled:
-                        if vkb_move_timer is None:
-                            if gaze_y_axis_score > 1.5:
-                                vkb_move_timer = Timer(hold_time, go_up)
-                                vkb_move_timer.start()
-                            elif gaze_y_axis_score < -1.5:
-                                vkb_move_timer = Timer(hold_time, go_down)
-                                vkb_move_timer.start()
-                            elif gaze_x_axis_score > 1.5:
-                                vkb_move_timer = Timer(hold_time, go_right)
-                                vkb_move_timer.start()
-                            elif gaze_x_axis_score < -1.5:
-                                vkb_move_timer = Timer(hold_time, go_left)
-                                vkb_move_timer.start()
-                        else:
-                            if (
-                                abs(gaze_y_axis_score) < 1.5
-                                and abs(gaze_x_axis_score) < 1.5
-                            ):
-                                vkb_move_timer.cancel()
-                                vkb_move_timer = None
-
-                        if vkb_commit_timer is None:
-                            if brow_left_up_score > 0.4 or brow_right_up_score > 0.4:
-                                vkb_commit_timer = Timer(commit_time, press_current_key)
-                                vkb_commit_timer.start()
-                        else:
-                            if brow_left_up_score < 0.4 and brow_right_up_score < 0.4:
-                                vkb_commit_timer.cancel()
-                                vkb_commit_timer = None
-
-                    def trim(raw_score: float):
-                        return -1 * round(raw_score, 2)
-
-                    def scale(raw_score: float, offset: float):
-                        return abs(round(2 / (raw_score + offset), 2))
-
-                    imgui.slider_float(gaze_test[0][0], gaze_x_axis_score, -2, 2)
-                    if imgui.button("Center##X"):
-                        gaze_test[0][1] = trim(gaze_x_axis_raw_score)
-                    imgui.same_line()
-                    if imgui.button("Min##X"):
-                        gaze_test[0][2] = scale(gaze_x_axis_raw_score, gaze_test[0][1])
-                    imgui.same_line()
-                    if imgui.button("Max##X"):
-                        gaze_test[0][3] = scale(gaze_x_axis_raw_score, gaze_test[0][1])
-
-                    imgui.slider_float(gaze_test[1][0], gaze_y_axis_score, -2, 2)
-                    if imgui.button("Center##Y"):
-                        gaze_test[1][1] = trim(gaze_y_axis_raw_score)
-                    imgui.same_line()
-                    if imgui.button("Min##Y"):
-                        gaze_test[1][2] = scale(gaze_y_axis_raw_score, gaze_test[1][1])
-                    imgui.same_line()
-                    if imgui.button("Max##Y"):
-                        gaze_test[1][3] = scale(gaze_y_axis_raw_score, gaze_test[1][1])
-
-                _, input_enabled = imgui.checkbox("Input enabled", input_enabled)
-
-                if imgui.button("Reset all offset and scale"):
-                    for idx, category in enumerate(visible_blendshapes):
-                        category[2] = 0.0
-                        category[3] = 1.0
-                    for idx, gaze_dir in enumerate(gaze_test):
-                        gaze_dir[1] = 0.0
-                        gaze_dir[2] = 1.0
-                        gaze_dir[3] = 1.0
             imgui.end()
 
         gl.glClearColor(1.0, 1.0, 1.0, 1)
