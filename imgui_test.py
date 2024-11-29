@@ -21,7 +21,7 @@ from sdl2 import *
 from statemachine import State, StateMachine
 
 from testwindow import show_test_window
-from tracking import Tracking
+from tracking import DebounceMachine, Tracking
 from vkeyboard import VKeyboard
 
 # Naming scheme, eg: eyeLookInLeft = Left eye, look inward (to the right)
@@ -74,36 +74,6 @@ gaze_test = [
 # EYE_WIDE_RIGHT = 22
 
 
-def image_to_texture(IMG):
-    img_gl = cv2.cvtColor(IMG, cv2.COLOR_BGR2RGB)  # convert color
-    height, width = img_gl.shape[:2]  # get shape
-
-    texture = gl.glGenTextures(1)
-
-    gl.glActiveTexture(gl.GL_TEXTURE0)
-
-    gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
-
-    gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-    gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-
-    gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-
-    gl.glTexImage2D(
-        gl.GL_TEXTURE_2D,
-        0,
-        gl.GL_RGB,
-        width,
-        height,
-        0,
-        gl.GL_RGB,
-        gl.GL_UNSIGNED_BYTE,
-        img_gl,
-    )
-
-    return texture, width, height
-
-
 def main():
     window, gl_context = impl_pysdl2_init()
     imgui.create_context()
@@ -121,13 +91,11 @@ def main():
     event = SDL_Event()
     tracking = Tracking()
     vkb = VKeyboard()
+    debounce = DebounceMachine(vkb)
+    debounce._graph().write_png("./fsm.png")
     show_custom_window = True
     running = True
-    vkb_move_timer = None
-    vkb_commit_timer = None
     input_enabled = False
-    up_blendshapes_snap = None
-    center_blendshapes_snap = None
 
     while running:
         while SDL_PollEvent(ctypes.byref(event)) != 0:
@@ -176,6 +144,14 @@ def main():
                         10,
                     )
 
+                    imgui.text(tracking.lowest_delta())
+                    debounce.press(tracking.lowest_delta(), 1)
+
+                    # if imgui.button("u hold"):
+                    #     debounce.press((0, -1), 0.5)
+                    # if imgui.button("u release"):
+                    #     debounce.release()
+
             imgui.end()
 
         gl.glClearColor(1.0, 1.0, 1.0, 1)
@@ -195,6 +171,36 @@ def main():
     SDL_GL_DeleteContext(gl_context)
     SDL_DestroyWindow(window)
     SDL_Quit()
+
+
+def image_to_texture(IMG):
+    img_gl = cv2.cvtColor(IMG, cv2.COLOR_BGR2RGB)  # convert color
+    height, width = img_gl.shape[:2]  # get shape
+
+    texture = gl.glGenTextures(1)
+
+    gl.glActiveTexture(gl.GL_TEXTURE0)
+
+    gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+
+    gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+    gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+    gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
+
+    gl.glTexImage2D(
+        gl.GL_TEXTURE_2D,
+        0,
+        gl.GL_RGB,
+        width,
+        height,
+        0,
+        gl.GL_RGB,
+        gl.GL_UNSIGNED_BYTE,
+        img_gl,
+    )
+
+    return texture, width, height
 
 
 def impl_pysdl2_init():

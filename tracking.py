@@ -1,4 +1,5 @@
 import time
+from threading import Timer
 
 import cv2
 import mediapipe as mp
@@ -6,6 +7,45 @@ import OpenGL.GL as gl
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from statemachine import State, StateMachine
+
+from vkeyboard import VKeyboard
+
+
+class DebounceMachine(StateMachine):
+    idle = State(initial=True)
+    hold = State()
+
+    press = idle.to(hold) | hold.to(hold)
+    release = hold.to(idle) | idle.to(idle)
+    wait_finished = hold.to(idle)
+
+    def __init__(self, vkb: VKeyboard):
+        self.vkb: VKeyboard = vkb
+        self.dir = None
+        self.timer: Timer = None
+        super(DebounceMachine, self).__init__()
+        pass
+
+    def before_press(self, dir, hold_time):
+        if self.dir != dir:
+            self.dir = dir
+            if self.timer is not None:
+                self.timer.cancel()
+            self.timer = Timer(hold_time, self.wait_finished)
+            self.timer.start()
+            print("holding", dir)
+
+    def on_release(self):
+        self.dir = None
+        if self.timer is not None:
+            self.timer.cancel()
+        print("release")
+
+    def on_wait_finished(self):
+        print("activate", self.dir)
+        self.dir = None
+        self.timer = None
 
 
 class Tracking:
@@ -120,6 +160,16 @@ class Tracking:
                 snapshot[1] = delta
 
         return current_frame, face_blendshapes
+
+    def lowest_delta(self):
+        current_min_value = 9999
+        current_min = ""
+        for key, value in self.blendshape_snapshots.items():
+            if value[1] < current_min_value:
+                current_min_value = value[1]
+                current_min = key
+
+        return current_min
 
     def __del__(self):
         self._cap.release()
