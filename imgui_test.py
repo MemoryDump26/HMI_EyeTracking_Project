@@ -81,7 +81,7 @@ def main():
 
     io = imgui.get_io()
     custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
-    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 128)
+    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 256)
     impl.refresh_font_texture()
 
     print("OpenGL version :", gl.glGetString(gl.GL_VERSION))
@@ -112,9 +112,9 @@ def main():
         img_texture, img_width, img_height = image_to_texture(current_frame)
 
         show_test_window()
-        imgui.push_font(keyboard_font)
-        vkb.show_keyboard()
-        imgui.pop_font()
+        # imgui.push_font(keyboard_font)
+        vkb.show_keyboard_v2()
+        # imgui.pop_font()
 
         if show_custom_window:
             # imgui.set_next_window_size(img_width + 100, img_height + 500)
