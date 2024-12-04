@@ -92,7 +92,7 @@ def main():
     tracking = Tracking()
     vkb = VKeyboard()
     debounce = DebounceMachine(vkb)
-    debounce._graph().write_png("./fsm.png")
+    # debounce._graph().write_png("./fsm.png")
     show_custom_window = True
     running = True
     input_enabled = False

@@ -13,20 +13,9 @@ class VKeyboard:
 
     def __init__(self):
         self.kb = Controller()
-        self.sel_row = 0
-        self.sel_col = 0
-        self.text_str = ""
-
-        self.layout = [
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-            ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-            ["a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "Enter"],
-            ["z", "x", "c", "v", "b", "n", "m", ",", ".", "/"],
-            [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-        ]
 
         self.layout3d = [
-            ["0_0", "0_1", "0_2", "0_3", " 0 ", "0_4", "0_5", "0_6", "0_7"],
+            ["0_0", "0_1", "0_2", "0_3", "0", "0_4", "0_5", "0_6", "0_7"],
             ["1_0", "1_1", "1_2", "1_3", "1", "1_4", "1_5", "1_6", "1_7"],
             ["2_0", "2_1", "2_2", "2_3", "2", "2_4", "2_5", "2_6", "2_7"],
             ["3_0", "3_1", "3_2", "3_3", "3", "3_4", "3_5", "3_6", "3_7"],
@@ -37,76 +26,27 @@ class VKeyboard:
             ["8_0", "8_1", "8_2", "8_3", "8", "8_4", "8_5", "8_6", "8_7"],
         ]
 
-    def press_current_key(self):
-        self.press_key(self.sel_row, self.sel_col)
-
-    def press_key(self, row: int, col: int):
-        if self.layout[row][col] == "Enter":
-            # lmao
-            self.kb.tap(Key.enter)
-        else:
-            self.kb.tap(self.layout[row][col])
-
-    def nav_left(self):
-        if self.sel_col > 0:
-            self.sel_col -= 1
-
-    def nav_right(self):
-        if self.sel_col < len(self.layout[self.sel_row]) - 1:
-            self.sel_col += 1
-
-    def nav_up(self):
-        if self.sel_row > 0:
-            self.sel_row -= 1
-        current_row_length = len(self.layout[self.sel_row]) - 1
-        if self.sel_col > current_row_length:
-            self.sel_col = current_row_length
-
-    def nav_down(self):
-        if self.sel_row < len(self.layout) - 1:
-            self.sel_row += 1
-        current_row_length = len(self.layout[self.sel_row]) - 1
-        if self.sel_col > current_row_length:
-            self.sel_col = current_row_length
-
-    def show_keyboard(self):
-        imgui.begin("vkeyboard")
-        changed, self.text_str = imgui.input_text(label="input", value=self.text_str)
-        imgui.set_item_default_focus()
-        for r_idx, row in enumerate(self.layout):
-            for c_idx, col in enumerate(row):
-                selected = False
-                if r_idx == self.sel_row and c_idx == self.sel_col:
-                    selected = True
-                    imgui.push_style_color(imgui.COLOR_BUTTON, 0.6, 0.8, 1.0)
-                if imgui.button(col):
-                    imgui.set_keyboard_focus_here(-1)
-                    self.press_key(r_idx, c_idx)
-                if selected:
-                    imgui.pop_style_color(1)
-                imgui.same_line()
-            imgui.new_line()
-        if imgui.button("L"):
-            self.nav_left()
-        imgui.same_line()
-        if imgui.button("R"):
-            self.nav_right()
-        imgui.same_line()
-        if imgui.button("U"):
-            self.nav_up()
-        imgui.same_line()
-        if imgui.button("D"):
-            self.nav_down()
-        imgui.same_line()
-        if imgui.button("Press"):
-            # self.press_key(self.sel_row, self.sel_col)
-            self.press_current_key()
-        imgui.end()
-
     def show_keyboard_v2(self):
         imgui.begin("vkeyboard_v2")
+        top_left_x = imgui.get_cursor_pos_x()
+        top_left_y = imgui.get_cursor_pos_y()
         self.widget_layer_thumbnail(self.layout3d[0])
+        imgui.set_cursor_pos((top_left_x + 160, top_left_y))
         self.widget_layer_thumbnail(self.layout3d[1])
+        imgui.set_cursor_pos((top_left_x + 320, top_left_y))
+        self.widget_layer_thumbnail(self.layout3d[2])
+        imgui.set_cursor_pos((top_left_x, top_left_y + 160))
+        self.widget_layer_thumbnail(self.layout3d[3])
+        imgui.set_cursor_pos((top_left_x + 160, top_left_y + 160))
+        self.widget_layer_thumbnail(self.layout3d[4])
+        imgui.set_cursor_pos((top_left_x + 320, top_left_y + 160))
+        self.widget_layer_thumbnail(self.layout3d[5])
+        imgui.set_cursor_pos((top_left_x, top_left_y + 320))
+        self.widget_layer_thumbnail(self.layout3d[6])
+        imgui.set_cursor_pos((top_left_x + 160, top_left_y + 320))
+        self.widget_layer_thumbnail(self.layout3d[7])
+        imgui.set_cursor_pos((top_left_x + 320, top_left_y + 320))
+        self.widget_layer_thumbnail(self.layout3d[8])
         imgui.end()
 
     def widget_layer_thumbnail(self, layer):
@@ -130,8 +70,3 @@ class VKeyboard:
         imgui.button(layer[7], width=50, height=50)
         imgui.set_cursor_pos((top_left_x + 100, top_left_y + 100))
         imgui.button(layer[8], width=50, height=50)
-
-        # for i, key in enumerate(layer):
-        #     imgui.button(key)
-        #     if (i + 1) % 3 != 0:
-        #         imgui.same_line()
