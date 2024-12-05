@@ -81,7 +81,7 @@ def main():
 
     io = imgui.get_io()
     custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
-    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 256)
+    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 32)
     impl.refresh_font_texture()
 
     print("OpenGL version :", gl.glGetString(gl.GL_VERSION))
@@ -112,9 +112,9 @@ def main():
         img_texture, img_width, img_height = image_to_texture(current_frame)
 
         show_test_window()
-        # imgui.push_font(keyboard_font)
+        imgui.push_font(keyboard_font)
         vkb.show_keyboard_v2()
-        # imgui.pop_font()
+        imgui.pop_font()
 
         if show_custom_window:
             # imgui.set_next_window_size(img_width + 100, img_height + 500)
@@ -123,7 +123,7 @@ def main():
                 imgui.image(img_texture, img_width / 2, img_height / 2)
                 if face_blendshapes:
                     for idx, category in enumerate(visible_blendshapes):
-                        raw_score = face_blendshapes[0][category[1]].score
+                        raw_score = face_blendshapes[category[1]].score
                         score = (raw_score + category[2]) * category[3]
                         score = round(score, 2)
                         imgui.progress_bar(score, (0, 0), category[0])
@@ -136,16 +136,15 @@ def main():
                         if (idx + 1) % 3 != 0:
                             imgui.same_line()
 
-                    for idx, dir in enumerate(directions):
+                    for d in tracking.sorted_delta():
                         imgui.slider_float(
-                            dir + "_delta",
-                            -1 * tracking.get_blendshape_delta(dir),
+                            d[0] + "_delta",
+                            -1 * d[1],
                             -10,
                             0,
                         )
 
-                    imgui.text(tracking.lowest_delta())
-                    debounce.press(tracking.lowest_delta(), 1)
+                    # debounce.press(tracking.lowest_delta(), 1)
 
                     # if imgui.button("u hold"):
                     #     debounce.press((0, -1), 0.5)

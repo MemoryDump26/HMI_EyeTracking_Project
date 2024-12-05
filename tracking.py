@@ -44,6 +44,7 @@ class DebounceMachine(StateMachine):
 
     def on_wait_finished(self):
         print("activate", self.dir)
+        self.vkb.navigate(self.dir)
         self.dir = None
         self.timer = None
 
@@ -90,17 +91,12 @@ class Tracking:
         self._cap.set(cv2.CAP_PROP_FPS, cap_fps)
 
         self.result = None
-        self.blendshape_snapshots = {}  # center, left, right, up, down
+        self.blendshape_snapshots: dict = {}
+        self.blendshape_deltas: dict[float] = {}
 
     def take_blendshape_snapshot(self, dir: str):
         if self.result:
-            self.blendshape_snapshots[dir] = [self.result.face_blendshapes[0], 0]
-
-    def get_blendshape_delta(self, dir: str):
-        if dir in self.blendshape_snapshots:
-            return self.blendshape_snapshots[dir][1]
-        else:
-            return 0
+            self.blendshape_snapshots[dir] = self.result.face_blendshapes[0]
 
     def update(self):
         success, current_frame = self._cap.read()
@@ -152,24 +148,17 @@ class Tracking:
                     landmark_drawing_spec=None,
                     connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
                 )
-            face_blendshapes = self.result.face_blendshapes
-            for snapshot in list(self.blendshape_snapshots.values()):
+            face_blendshapes = self.result.face_blendshapes[0]
+            for dir, snapshot in self.blendshape_snapshots.items():
                 delta = 0
-                for idx, blendshape in enumerate(face_blendshapes[0]):
-                    delta += abs(blendshape.score - snapshot[0][idx].score)
-                snapshot[1] = delta
+                for idx, blendshape in enumerate(face_blendshapes):
+                    delta += abs(blendshape.score - snapshot[idx].score)
+                self.blendshape_deltas[dir] = delta
 
         return current_frame, face_blendshapes
 
-    def lowest_delta(self):
-        current_min_value = 9999
-        current_min = ""
-        for key, value in self.blendshape_snapshots.items():
-            if value[1] < current_min_value:
-                current_min_value = value[1]
-                current_min = key
-
-        return current_min
+    def sorted_delta(self) -> dict:
+        return sorted(self.blendshape_deltas.items(), key=lambda item: item[1])
 
     def __del__(self):
         self._cap.release()
