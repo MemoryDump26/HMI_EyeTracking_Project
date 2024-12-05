@@ -128,21 +128,21 @@ def main():
                         score = round(score, 2)
                         imgui.progress_bar(score, (0, 0), category[0])
 
-                    if imgui.button("up_snap"):
-                        tracking.take_blendshape_snapshot("up")
+                    directions = ["nw", "n", "ne", "w", "c", "e", "sw", "s", "se"]
 
-                    if imgui.button("center_snap"):
-                        tracking.take_blendshape_snapshot("center")
+                    for idx, dir in enumerate(directions):
+                        if imgui.button(dir):
+                            tracking.take_blendshape_snapshot(dir)
+                        if (idx + 1) % 3 != 0:
+                            imgui.same_line()
 
-                    imgui.slider_float(
-                        "Up Delta", tracking.get_blendshape_delta("up"), -10, 10
-                    )
-                    imgui.slider_float(
-                        "Center Delta",
-                        tracking.get_blendshape_delta("center"),
-                        -10,
-                        10,
-                    )
+                    for idx, dir in enumerate(directions):
+                        imgui.slider_float(
+                            dir + "_delta",
+                            -1 * tracking.get_blendshape_delta(dir),
+                            -10,
+                            0,
+                        )
 
                     imgui.text(tracking.lowest_delta())
                     debounce.press(tracking.lowest_delta(), 1)
