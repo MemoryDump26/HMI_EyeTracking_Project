@@ -17,7 +17,6 @@ class DebounceMachine(StateMachine):
     hold = State()
 
     press = idle.to(hold) | hold.to(hold)
-    release = hold.to(idle) | idle.to(idle)
     wait_finished = hold.to(idle)
 
     def __init__(self, vkb: VKeyboard):
@@ -35,12 +34,6 @@ class DebounceMachine(StateMachine):
             self.timer = Timer(hold_time, self.wait_finished)
             self.timer.start()
             print("holding", dir)
-
-    def on_release(self):
-        self.dir = None
-        if self.timer is not None:
-            self.timer.cancel()
-        print("release")
 
     def on_wait_finished(self):
         print("activate", self.dir)
