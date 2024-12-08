@@ -92,7 +92,7 @@ def main():
     tracking = Tracking()
     vkb = VKeyboard()
     debounce = DebounceMachine(vkb)
-    # debounce._graph().write_png("./fsm.png")
+    debounce._graph().write_png("./fsm.png")
     show_custom_window = True
     running = True
     input_enabled = False
@@ -136,7 +136,8 @@ def main():
                         if (idx + 1) % 3 != 0:
                             imgui.same_line()
 
-                    for d in tracking.sorted_delta():
+                    deltas = tracking.sorted_delta()
+                    for d in deltas:
                         imgui.slider_float(
                             d[0] + "_delta",
                             -1 * d[1],
@@ -144,7 +145,8 @@ def main():
                             0,
                         )
 
-                    # debounce.press(tracking.lowest_delta(), 1)
+                    if len(deltas):
+                        debounce.press(deltas[0][0], 1)
 
                     # if imgui.button("u hold"):
                     #     debounce.press((0, -1), 0.5)

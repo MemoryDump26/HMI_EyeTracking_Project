@@ -26,11 +26,27 @@ class VKeyboard:
             "s"     : ["7_0", "7_1", "7_2", "7_3", "7", "7_4", "7_5", "7_6", "7_7"],
             "se"    : ["8_0", "8_1", "8_2", "8_3", "8", "8_4", "8_5", "8_6", "8_7"],
         }
+        self.layer_color: dict[list] = {
+            "nw"    : [0, 0, 0, 0],
+            "n"     : [0, 0, 0, 0],
+            "ne"    : [0, 0, 0, 0],
+            "w"     : [0, 0, 0, 0],
+            "c"     : [0, 0, 0, 0],
+            "e"     : [0, 0, 0, 0],
+            "sw"    : [0, 0, 0, 0],
+            "s"     : [0, 0, 0, 0],
+            "se"    : [0, 0, 0, 0],
+        }
         # fmt: on
         self.layer: str = None
+        self.highlighted_layer: str = "c"
 
     def navigate(self, dir: str):
-        self.layer = dir
+        if self.layer is None:
+            self.layer = dir
+
+    def highlight(self, dir: str):
+        self.highlighted_layer = dir
 
     def home(self):
         self.layer = None
@@ -44,10 +60,17 @@ class VKeyboard:
         top_left_y = imgui.get_cursor_pos_y()
 
         if self.layer is None:
-            for idx, layer in enumerate(self.layout3d.values()):
+            for idx, layer in enumerate(self.layout3d.items()):
                 x_offset, y_offset = self.get_grid_offset(idx)
                 imgui.set_cursor_pos((top_left_x + x_offset, top_left_y + y_offset))
-                self.widget_layer_thumbnail(layer)
+                self.widget_layer_thumbnail(
+                    layer[1],
+                    (
+                        (255, 255, 255, 0.5)
+                        if layer[0] == self.highlighted_layer
+                        else (255, 255, 255, 0.1)
+                    ),
+                )
         else:
             for idx, key in enumerate(self.layout3d[self.layer]):
                 x_offset, y_offset = self.get_grid_offset(idx)
@@ -63,10 +86,12 @@ class VKeyboard:
     def widget_key(self, key):
         imgui.button(key, width=150, height=150)
 
-    def widget_layer_thumbnail(self, layer):
+    def widget_layer_thumbnail(self, layer: list, color: tuple):
         top_left_x = imgui.get_cursor_pos_x()
         top_left_y = imgui.get_cursor_pos_y()
+        imgui.push_style_color(imgui.COLOR_BUTTON, *color)
         imgui.button(layer[4], width=150, height=150)
+        imgui.pop_style_color()
 
         imgui.push_style_color(imgui.COLOR_BUTTON, 255, 255, 255, 0.0)
         imgui.set_cursor_pos((top_left_x, top_left_y))

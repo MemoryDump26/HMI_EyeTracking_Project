@@ -33,6 +33,7 @@ class DebounceMachine(StateMachine):
                 self.timer.cancel()
             self.timer = Timer(hold_time, self.wait_finished)
             self.timer.start()
+            self.vkb.highlight(self.dir)
             print("holding", dir)
 
     def on_wait_finished(self):
