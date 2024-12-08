@@ -113,7 +113,7 @@ def main():
 
         show_test_window()
         imgui.push_font(keyboard_font)
-        vkb.show_keyboard_v2()
+        vkb.show_keyboard_v3()
         imgui.pop_font()
 
         if show_custom_window:

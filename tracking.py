@@ -38,7 +38,7 @@ class DebounceMachine(StateMachine):
 
     def on_wait_finished(self):
         print("activate", self.dir)
-        self.vkb.navigate(self.dir)
+        # self.vkb.navigate(self.dir)
         self.dir = None
         self.timer = None
 
