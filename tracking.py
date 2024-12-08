@@ -1,5 +1,4 @@
 import time
-from threading import Timer
 
 import cv2
 import mediapipe as mp
@@ -7,40 +6,8 @@ import OpenGL.GL as gl
 from mediapipe.framework.formats import landmark_pb2
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from statemachine import State, StateMachine
 
 from vkeyboard import VKeyboard
-
-
-class DebounceMachine(StateMachine):
-    idle = State(initial=True)
-    hold = State()
-
-    press = idle.to(hold) | hold.to(hold)
-    wait_finished = hold.to(idle)
-
-    def __init__(self, vkb: VKeyboard):
-        self.vkb: VKeyboard = vkb
-        self.dir = None
-        self.timer: Timer = None
-        super(DebounceMachine, self).__init__()
-        pass
-
-    def before_press(self, dir, hold_time):
-        if self.dir != dir:
-            self.dir = dir
-            if self.timer is not None:
-                self.timer.cancel()
-            self.timer = Timer(hold_time, self.wait_finished)
-            self.timer.start()
-            self.vkb.highlight(self.dir)
-            print("holding", dir)
-
-    def on_wait_finished(self):
-        print("activate", self.dir)
-        self.vkb.navigate(self.dir)
-        self.dir = None
-        self.timer = None
 
 
 class Tracking:

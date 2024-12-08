@@ -5,8 +5,11 @@ import time
 os.environ["PYNPUT_BACKEND_KEYBOARD"] = "uinput"
 os.environ["PYNPUT_BACKEND_MOUSE"] = "dummy"
 
+from threading import Timer
+
 import imgui
 from pynput.keyboard import Controller
+from statemachine import State, StateMachine
 
 
 class Key:
@@ -159,3 +162,34 @@ class VKeyboard:
             imgui.set_cursor_pos((top_left_x + x_offset, top_left_y + y_offset))
             imgui.button(dir[1].label, width=50, height=50)
         imgui.pop_style_color()
+
+
+class DebounceMachine(StateMachine):
+    idle = State(initial=True)
+    hold = State()
+
+    press = idle.to(hold) | hold.to(hold)
+    wait_finished = hold.to(idle)
+
+    def __init__(self, vkb: VKeyboard):
+        self.vkb: VKeyboard = vkb
+        self.dir = None
+        self.timer: Timer = None
+        super(DebounceMachine, self).__init__()
+        pass
+
+    def before_press(self, dir, hold_time):
+        if self.dir != dir:
+            self.dir = dir
+            if self.timer is not None:
+                self.timer.cancel()
+            self.timer = Timer(hold_time, self.wait_finished)
+            self.timer.start()
+            self.vkb.highlight(self.dir)
+            print("holding", dir)
+
+    def on_wait_finished(self):
+        print("activate", self.dir)
+        self.vkb.navigate(self.dir)
+        self.dir = None
+        self.timer = None

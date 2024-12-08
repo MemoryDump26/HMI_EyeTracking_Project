@@ -21,8 +21,8 @@ from sdl2 import *
 from statemachine import State, StateMachine
 
 from testwindow import show_test_window
-from tracking import DebounceMachine, Tracking
-from vkeyboard import VKeyboard
+from tracking import Tracking
+from vkeyboard import DebounceMachine, VKeyboard
 
 # Naming scheme, eg: eyeLookInLeft = Left eye, look inward (to the right)
 # Your webcam might mirror the image by default, see 'flip = False' above
