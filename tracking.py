@@ -142,12 +142,13 @@ class Tracking:
                     landmark_drawing_spec=None,
                     connection_drawing_spec=mp.solutions.drawing_styles.get_default_face_mesh_iris_connections_style(),
                 )
-            face_blendshapes = self.result.face_blendshapes[0]
-            for dir, snapshot in self.blendshape_snapshots.items():
-                delta = 0
-                for idx, blendshape in enumerate(face_blendshapes):
-                    delta += abs(blendshape.score - snapshot[idx].score)
-                self.blendshape_deltas[dir] = delta
+            if self.result.face_blendshapes:
+                face_blendshapes = self.result.face_blendshapes[0]
+                for dir, snapshot in self.blendshape_snapshots.items():
+                    delta = 0
+                    for idx, blendshape in enumerate(face_blendshapes):
+                        delta += abs(blendshape.score - snapshot[idx].score)
+                    self.blendshape_deltas[dir] = delta
 
         return current_frame, face_blendshapes
 
