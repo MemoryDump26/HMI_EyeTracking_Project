@@ -13,9 +13,10 @@ from statemachine import State, StateMachine
 
 
 class Key:
-    def __init__(self, key, label: str):
+    def __init__(self, key="", label: str = "", one_shot_mod: bool = False):
         self.label: str = label
         self.key = key
+        self.one_shot_mod = one_shot_mod
 
 
 class Layer:
@@ -57,7 +58,7 @@ class VKeyboard:
                 Key("3", "3"), Key("4", "4"), Key("5", "5"),
                 Key("6", "6"), Key("7", "7"), Key("8", "8"),
             ]),
-            Key("", ""),
+            Key(),
             # Layer([
             #     Key("0", "0"), Key("1", "1"), Key("2", "2"),
             #     Key("3", "3"), Key("4", "4"), Key("5", "5"),
@@ -90,8 +91,17 @@ class VKeyboard:
         self.highlighted_layer: str = "c"
 
     def navigate(self, dir: str):
-        if self.get_current_layer().can_go(dir):
+        entity = self.get_current_layer().get(dir)
+        if isinstance(entity, Layer):
             self.layer_stack.append(dir)
+        elif isinstance(entity, Key):
+            if entity.key is None:
+                return
+            if entity.one_shot_mod:
+                self.kb.press(entity.key)
+            else:
+                self.kb.tap(entity.key)
+            self.home()
 
     def highlight(self, dir: str):
         self.highlighted_layer = dir
