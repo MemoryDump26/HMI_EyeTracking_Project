@@ -8,15 +8,15 @@ os.environ["PYNPUT_BACKEND_MOUSE"] = "dummy"
 from threading import Timer
 
 import imgui
-from pynput.keyboard import Controller
+from pynput.keyboard import Controller, Key
 from statemachine import State, StateMachine
 
 
-class Key:
-    def __init__(self, key="", label: str = "", one_shot_mod: bool = False):
+class K:
+    def __init__(self, key="", label: str = "", mod: bool = False):
         self.label: str = label
         self.key = key
-        self.one_shot_mod = one_shot_mod
+        self.mod = mod
 
 
 class Layer:
@@ -38,51 +38,38 @@ class VKeyboard:
 
         # fmt: off
         self.layout = Layer([
+            K(),
             Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
+                K(Key.ctrl, "Ctl", True),      K(Key.backspace, "BS"),     K(Key.esc,"Esc"),
+                K(Key.shift, "Sft", True),    K(" ", "Spc"),            K(Key.cmd, "Cmd", True),
+                K(Key.alt, "Alt", True),        K(Key.enter, "Rtn"),      K(Key.tab, "Tab"),
+            ]),
+            K(),
+            Layer([
+                K("1", "1"), K("2", "2"), K("3", "3"),
+                K("f", "f"), K("o", "o"), K("b", "b"),
+                K("y", "y"), K("u", "u"), K("l", "l"),
+            ]),
+            K(),
+            Layer([
+                K(",", ",<"), K(".>", "."), K("/?", "/"),
+                K(";", ";:"), K("i", "i"), K("'", "'\""),
+                K("j", "j"), K("m", "m"), K("g", "g"),
             ]),
             Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
+                K("4", "4"), K("5", "5"), K("6", "6"),
+                K()        , K("t", "t"), K("z", "z"),
+                K("h", "h"), K("s", "s"), K("w", "w"),
             ]),
             Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
+                K("7", "7"), K("8", "8"), K("9", "9"),
+                K("x", "x"), K("e", "e"), K(),
+                K("k", "k"), K("r", "r"), K("v", "v"),
             ]),
             Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
-            ]),
-            Key(),
-            # Layer([
-            #     Key("0", "0"), Key("1", "1"), Key("2", "2"),
-            #     Key("3", "3"), Key("4", "4"), Key("5", "5"),
-            #     Key("6", "6"), Key("7", "7"), Key("8", "8"),
-            # ]),
-            Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
-            ]),
-            Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
-            ]),
-            Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
-            ]),
-            Layer([
-                Key("0", "0"), Key("1", "1"), Key("2", "2"),
-                Key("3", "3"), Key("4", "4"), Key("5", "5"),
-                Key("6", "6"), Key("7", "7"), Key("8", "8"),
+                K("0", "0"), K("-", "-_"), K("=", "=+"),
+                K("q", "q"), K("a", "a"), K("p", "p"),
+                K("c", "c"), K("d", "d"), K("n", "n"),
             ]),
         ])
         # fmt: on
@@ -91,16 +78,23 @@ class VKeyboard:
         self.highlighted_layer: str = "c"
 
     def navigate(self, dir: str):
+        if dir == "reset":
+            self.clear_modifiers()
+            self.home()
+            return
         entity = self.get_current_layer().get(dir)
         if isinstance(entity, Layer):
             self.layer_stack.append(dir)
-        elif isinstance(entity, Key):
-            if entity.key is None:
+        elif isinstance(entity, K):
+            if entity.key == "":
                 return
-            if entity.one_shot_mod:
-                self.kb.press(entity.key)
+            if entity.mod:
+                # self.kb.press(entity.key)
+                pass
             else:
+                # with self.kb.modifiers:
                 self.kb.tap(entity.key)
+                self.clear_modifiers()
             self.home()
 
     def highlight(self, dir: str):
@@ -108,6 +102,12 @@ class VKeyboard:
 
     def home(self):
         self.layer_stack = []
+
+    def clear_modifiers(self):
+        self.kb.release(Key.ctrl)
+        self.kb.release(Key.shift)
+        self.kb.release(Key.alt)
+        self.kb.release(Key.cmd)
 
     def get_grid_offset(self, index: int, size: int):
         return (index % 3 * size, index // 3 * size)
@@ -124,9 +124,10 @@ class VKeyboard:
         top_left_y = imgui.get_cursor_pos_y()
 
         current_layer: Layer = self.get_current_layer()
+        size: int = 300
 
         for idx, entity in enumerate(current_layer.layout.items()):
-            x_offset, y_offset = self.get_grid_offset(idx, 160)
+            x_offset, y_offset = self.get_grid_offset(idx, size + 10)
             imgui.set_cursor_pos((top_left_x + x_offset, top_left_y + y_offset))
             if isinstance(entity[1], Layer):
                 self.widget_layer_thumbnail(
@@ -136,8 +137,9 @@ class VKeyboard:
                         if entity[0] == self.highlighted_layer
                         else (255, 255, 255, 0.1)
                     ),
+                    size,
                 )
-            if isinstance(entity[1], Key):
+            if isinstance(entity[1], K):
                 self.widget_key(
                     entity[1],
                     (
@@ -145,6 +147,7 @@ class VKeyboard:
                         if entity[0] == self.highlighted_layer
                         else (255, 255, 255, 0.1)
                     ),
+                    size,
                 )
         if imgui.button("w"):
             self.navigate("w")
@@ -152,25 +155,27 @@ class VKeyboard:
             self.home()
         imgui.end()
 
-    def widget_key(self, key: Key, color: tuple):
+    def widget_key(self, key: K, color: tuple, size: int):
         imgui.push_style_color(imgui.COLOR_BUTTON, *color)
-        imgui.button(key.label, width=150, height=150)
+        imgui.button(key.label, width=size, height=size)
         imgui.pop_style_color()
 
-    def widget_layer_thumbnail(self, layer: Layer, color: tuple):
+    def widget_layer_thumbnail(self, layer: Layer, color: tuple, size: int):
         top_left_x = imgui.get_cursor_pos_x()
         top_left_y = imgui.get_cursor_pos_y()
         imgui.push_style_color(imgui.COLOR_BUTTON, *color)
-        imgui.button(layer.layout["c"].label, width=150, height=150)
+        imgui.button(layer.layout["c"].label, width=size, height=size)
         imgui.pop_style_color()
+
+        inner_size: int = size // 3
 
         imgui.push_style_color(imgui.COLOR_BUTTON, 255, 255, 255, 0.0)
         for idx, dir in enumerate(layer.layout.items()):
             if dir[0] == "c":
                 continue
-            x_offset, y_offset = self.get_grid_offset(idx, 50)
+            x_offset, y_offset = self.get_grid_offset(idx, inner_size)
             imgui.set_cursor_pos((top_left_x + x_offset, top_left_y + y_offset))
-            imgui.button(dir[1].label, width=50, height=50)
+            imgui.button(dir[1].label, width=inner_size, height=inner_size)
         imgui.pop_style_color()
 
 

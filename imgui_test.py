@@ -81,7 +81,7 @@ def main():
 
     io = imgui.get_io()
     custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
-    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 32)
+    keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 64)
     impl.refresh_font_texture()
 
     print("OpenGL version :", gl.glGetString(gl.GL_VERSION))
@@ -135,6 +135,9 @@ def main():
                             tracking.take_blendshape_snapshot(dir)
                         if (idx + 1) % 3 != 0:
                             imgui.same_line()
+
+                    if imgui.button("reset"):
+                        tracking.take_blendshape_snapshot("reset")
 
                     deltas = tracking.sorted_delta()
                     for d in deltas:
