@@ -76,6 +76,8 @@ class VKeyboard:
 
         self.layer_stack: list = []
         self.highlighted_layer: str = "c"
+        # pynput modifiers workaround
+        self.modifiers: set = set()
 
     def navigate(self, dir: str):
         if dir == "reset":
@@ -90,11 +92,19 @@ class VKeyboard:
                 return
             if entity.mod:
                 # self.kb.press(entity.key)
-                pass
+                self.modifiers.add(entity.key)
             else:
-                # with self.kb.modifiers:
-                self.kb.tap(entity.key)
+                # Really ugly workaround for pynput modifiers XD
+                # Please don't do this at home
+                with self.kb.pressed(*self.modifiers):
+                    time.sleep(0.01)  # ???? XDD ????
+                    self.kb.press(entity.key)
+                    time.sleep(0.01)  # ???? XDD ????
+                    self.kb.release(entity.key)
+                    time.sleep(0.01)  # ???? XDD ????
+
                 self.clear_modifiers()
+                self.modifiers.clear()
             self.home()
 
     def highlight(self, dir: str):
