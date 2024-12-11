@@ -80,7 +80,7 @@ def main():
     impl = SDL2Renderer(window)
 
     io = imgui.get_io()
-    custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 24)
+    custom_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Regular.ttf", 32)
     keyboard_font = io.fonts.add_font_from_file_ttf("NotoSansMono-Black.ttf", 64)
     impl.refresh_font_texture()
 
@@ -112,13 +112,18 @@ def main():
         img_texture, img_width, img_height = image_to_texture(current_frame)
 
         show_test_window()
+
+        viewport = imgui.get_main_viewport()
+        imgui.set_next_window_position(viewport.pos[0], viewport.pos[1])
+        imgui.set_next_window_size(viewport.size[0], viewport.size[1])
+
         imgui.push_font(keyboard_font)
         vkb.show_keyboard_v3()
         imgui.pop_font()
 
         if show_custom_window:
             # imgui.set_next_window_size(img_width + 100, img_height + 500)
-            is_expand, show_custom_window = imgui.begin("Custom window", True)
+            is_expand, show_custom_window = imgui.begin("Config")
             if is_expand:
                 imgui.image(img_texture, img_width / 2, img_height / 2)
                 if face_blendshapes:
@@ -150,11 +155,6 @@ def main():
 
                     if len(deltas):
                         debounce.press(deltas[0][0], 1)
-
-                    # if imgui.button("u hold"):
-                    #     debounce.press((0, -1), 0.5)
-                    # if imgui.button("u release"):
-                    #     debounce.release()
 
             imgui.end()
 

@@ -129,7 +129,10 @@ class VKeyboard:
         return current_layer
 
     def show_keyboard_v3(self):
-        imgui.begin("vkeyboard_v3")
+        imgui.begin(
+            "vkeyboard_v3",
+            flags=imgui.WINDOW_NO_TITLE_BAR | imgui.WINDOW_ALWAYS_AUTO_RESIZE,
+        )
         top_left_x = imgui.get_cursor_pos_x()
         top_left_y = imgui.get_cursor_pos_y()
 
@@ -159,10 +162,8 @@ class VKeyboard:
                     ),
                     size,
                 )
-        if imgui.button("w"):
-            self.navigate("w")
-        if imgui.button("back"):
-            self.home()
+        if imgui.button("Config"):
+            imgui.set_window_focus_labeled("Config")
         imgui.end()
 
     def widget_key(self, key: K, color: tuple, size: int):
