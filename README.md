@@ -1,18 +1,28 @@
-# TODO
+# Bài tập lớn nhóm 6 lớp Tương tác người - máy (INT2041)
 
-|Bảo |Thiệu |Đạt |
-|---|---|---|
-|Keyboard interface     |Gaze detection abstraction     |Report     |
-|Flick?                 |                               |           |
-|Filtering?             |                               |           |
+## Thành viên nhóm:
+| Tên               | MSV      | Đóng góp | Nội dung                           |
+| ----------------- | -------- | -------- | ---------------------------------- |
+| Lê Trọng Bảo      | 21020608 | 40%      | Cài đặt giải pháp, thiết kế layout |
+| Lưu Văn Đức Thiệu | 21020476 | 30%      | Refactor code, báo cáo, slide      |
+| Trịnh Xuân Đạt    | 21021477 | 30%      | Báo cáo, slide thuyết trình        |
 
-## Gaze detection interface
+# Linux
 
-- gazeVector(): trả về vector hướng nhìn (x, y)
-- Có thể làm kiểu if gazeLeft(), nhưng tôi đang thích ý tưởng kiểu flickLeft() hơn, lấy rate of change của gaze. Cần nghiên cứu thêm.
+## Lần đầu sử dụng
+```
+# Người dùng cần ở trong group "input" và "tty"
+sudo usermod -a -G input $USER
+sudo usermod -a -G tty $USER
 
-# Chạy trên Linux
+# Tạo luật udev & kích hoạt
+echo 'KERNEL=="uinput", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d/99-uinput.rules
+sudo udevadm trigger
 
+# Tự động load module uinput khi khởi động
+echo "uinput" | sudo tee /etc/modules-load.d/uinput.conf
+```
+## Chạy ứng dụng
 ```
 # Setup venv (chỉ cần chạy khi mới clone)
 python -m venv ./venv
@@ -20,14 +30,24 @@ python -m venv ./venv
 # Kích hoạt venv khi mở terminal mới (thường thì shell sẽ hiện '(venv)' ở đầu)
 source venv/bin/activate
 
-# Chạy nếu có thêm dependency (sau khi đã mở venv)
+# Chạy nếu cần thêm dependency mới (sau khi đã mở venv)
 pip install -r requirements.txt
 
 python demo1.py
 ```
 
-# Chạy trên Windows
+# Windows (untested)
 
+## Lần đầu sử dụng
+Tại dòng 5 file vkeyboard.py:
+```
+os.environ["PYNPUT_BACKEND_KEYBOARD"] = "uinput"
+```
+Sửa thành:
+```
+os.environ["PYNPUT_BACKEND_KEYBOARD"] = "win32"
+```
+## Chạy ứng dụng
 ```
 Shift + Right click trong folder -> open Powershell/Command Prompt
 
@@ -42,20 +62,3 @@ pip install -r requirements.txt
 
 python demo1.py
 ```
-
-# Notes
-
-## `imgui_test.py`
-
-- demo mới trên imgui
-
-## `demo1.py`
-
-- Là file tạm cài lại, chỉ hiện dữ liệu liên quan tới mắt.
-- Mặc định phân giải 800x600, 20fps, có thể chỉnh ở đầu file ("Camera parameters")
-- Nếu `camera_id = 0` không tìm được webcam: <https://wiki.archlinux.org/title/Webcam_setup>
-
-## `detect.py`
-
-- Là file gốc lấy từ example mediapipe cho raspberry pi (<https://github.com/google-ai-edge/mediapipe-samples/tree/main/examples/face_landmarker/raspberry_pi>)
-- Chạy `python detect.py --help` để hiện args
