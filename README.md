@@ -33,7 +33,7 @@ source venv/bin/activate
 # Chạy nếu cần thêm dependency mới (sau khi đã mở venv)
 pip install -r requirements.txt
 
-python demo1.py
+python imgui_test.py
 ```
 
 # Windows (untested)
@@ -60,5 +60,5 @@ python -m venv ./venv
 # Chạy nếu có thêm dependency (sau khi đã mở venv)
 pip install -r requirements.txt
 
-python demo1.py
+python imgui_test.py
 ```
